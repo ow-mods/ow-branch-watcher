@@ -1,0 +1,41 @@
+on:
+  workflow_dispatch:
+  schedule:
+  - cron: "*/10 * * * *"
+  
+jobs:
+  check:
+    if: ${{ github.repository != 'misternebula/Steam-App-Branch-Watcher-Template' }}
+    name: check steam branches
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v3
+        
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0.x'
+          
+      - name: Install dependencies
+        run: |
+          dotnet add package Newtonsoft.Json --version 13.0.3
+          dotnet add package CSharpDiscordWebhook.NET --version 2.7.1
+          dotnet add package SteamKit2 --version 2.4.1
+          
+      - name: Build
+        run: dotnet build
+        
+      - name: Run program
+        run: |
+          ./bin/Debug/net6.0/SteamAppBranchWatcher.exe '${{ secrets.STEAM_USERNAME }}' '${{ secrets.STEAM_PASSWORD }}' '${{ secrets.DISCORD_WEBHOOK }}' '${{ secrets.APPID }}'
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+          git commit -m "Updated branches.json"
+          git push
