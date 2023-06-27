@@ -227,6 +227,11 @@ public class Program
 						Fields = new List<EmbedField>()
 					};
 
+					if (updatedBranch.BranchName == "staging")
+					{
+						embed.Description += $"{Environment.NewLine}{Environment.NewLine}(they do be staging)";
+					}
+
 					embed.Fields.Add(new EmbedField()
 					{
 						Name = "Name",
