@@ -30,6 +30,18 @@ public class PriceInfo
 	public int initialPrice = 0;
 	public int currentPrice = 0;
 	public int discountPercent = 0;
+
+	public int initialPriceGBP = 0;
+	public int currentPriceGBP = 0;
+	public int discountPercentGBP = 0;
+
+	public int initialPriceEURO = 0;
+	public int currentPriceEURO = 0;
+	public int discountPercentEURO = 0;
+
+	public int initialPriceCAD = 0;
+	public int currentPriceCAD = 0;
+	public int discountPercentCAD = 0;
 }
 
 public class Program
@@ -170,25 +182,73 @@ public class Program
 			}
 
 			// check for price update
+
+			// us
 			var json = new WebClient().DownloadString($"https://store.steampowered.com/api/appdetails?appids={appid}&cc=us&filters=price_overview");
-
 			var jObject = JObject.Parse(json);
-
 			var priceOverview = jObject[$"{appid}"]["data"]["price_overview"];
 			var initialPrice = (int)priceOverview["initial"];
 			var currentPrice = (int)priceOverview["final"];
 			var discountPercent = (int)priceOverview["discount_percent"];
+
+			// gbp
+			json = new WebClient().DownloadString($"https://store.steampowered.com/api/appdetails?appids={appid}&cc=gb&filters=price_overview");
+			jObject = JObject.Parse(json);
+			priceOverview = jObject[$"{appid}"]["data"]["price_overview"];
+			var initialPriceGBP = (int)priceOverview["initial"];
+			var currentPriceGBP = (int)priceOverview["final"];
+			var discountPercentGBP = (int)priceOverview["discount_percent"];
+
+			// euro
+			json = new WebClient().DownloadString($"https://store.steampowered.com/api/appdetails?appids={appid}&cc=fr&filters=price_overview");
+			jObject = JObject.Parse(json);
+			priceOverview = jObject[$"{appid}"]["data"]["price_overview"];
+			var initialPriceEURO = (int)priceOverview["initial"];
+			var currentPriceEURO = (int)priceOverview["final"];
+			var discountPercentEURO = (int)priceOverview["discount_percent"];
+
+			// cad
+			json = new WebClient().DownloadString($"https://store.steampowered.com/api/appdetails?appids={appid}&cc=ca&filters=price_overview");
+			jObject = JObject.Parse(json);
+			priceOverview = jObject[$"{appid}"]["data"]["price_overview"];
+			var initialPriceCAD = (int)priceOverview["initial"];
+			var currentPriceCAD = (int)priceOverview["final"];
+			var discountPercentCAD = (int)priceOverview["discount_percent"];
+
+			Console.WriteLine(Path.GetFullPath("price.json"));
 
 			if (!File.Exists("price.json"))
 			{
 				File.WriteAllText("price.json", JsonConvert.SerializeObject(new PriceInfo()));
 			}
 
-			var oldPrice = JsonConvert.DeserializeObject<PriceInfo>(File.ReadAllText("price.json"));
-			var actualPriceHasChanged = initialPrice != oldPrice.initialPrice;
-			var isOnSale = currentPrice != oldPrice.currentPrice;
+			var oldPriceInfo = JsonConvert.DeserializeObject<PriceInfo>(File.ReadAllText("price.json"));
 
-			File.WriteAllText("price.json", JsonConvert.SerializeObject(new PriceInfo() { currentPrice = currentPrice, initialPrice = initialPrice, discountPercent = discountPercent }));
+			var actualPriceHasChanged = initialPrice != oldPriceInfo.initialPrice
+			                            || initialPriceGBP != oldPriceInfo.initialPriceGBP
+			                            || initialPriceEURO != oldPriceInfo.initialPriceEURO
+			                            || initialPriceCAD != oldPriceInfo.initialPriceCAD;
+
+			var isOnSale = currentPrice != oldPriceInfo.currentPrice
+						   || currentPriceGBP != oldPriceInfo.currentPriceGBP
+						   || currentPriceEURO != oldPriceInfo.currentPriceEURO
+						   || currentPriceCAD != oldPriceInfo.currentPriceCAD;
+
+			File.WriteAllText("price.json", JsonConvert.SerializeObject(new PriceInfo()
+			{
+				currentPrice = currentPrice,
+				initialPrice = initialPrice,
+				discountPercent = discountPercent,
+				currentPriceGBP = currentPriceGBP,
+				initialPriceGBP = initialPriceGBP,
+				discountPercentGBP = discountPercentGBP,
+				currentPriceEURO = currentPriceEURO,
+				initialPriceEURO = initialPriceEURO,
+				discountPercentEURO = discountPercentEURO,
+				currentPriceCAD = currentPriceCAD,
+				initialPriceCAD = initialPriceCAD,
+				discountPercentCAD = discountPercentCAD
+			}));
 
 			if (newBranches.Count > 0 || updatedBranches.Count > 0)
 			{
@@ -348,55 +408,180 @@ public class Program
 					{
 						Title = "Price Change",
 						Color = new DiscordColor(Color.LightBlue),
-						Description = $"The base price has changed from ${oldPrice.initialPrice / 100f:F2} to ${initialPrice / 100f:F2}",
+						Description = "The base price has changed!",
 						Footer = new EmbedFooter() { Text = appName }
 					};
+
+					embed.Fields.Add(new EmbedField()
+					{
+						Name = "US Dollar",
+						Value = $"${oldPriceInfo.initialPrice / 100f:F2} to ${initialPrice / 100f:F2}"
+					});
+
+					embed.Fields.Add(new EmbedField()
+					{
+						Name = "Euro",
+						Value = $"€{oldPriceInfo.initialPriceEURO / 100f:F2} to €{initialPriceEURO / 100f:F2}"
+					});
+
+					embed.Fields.Add(new EmbedField()
+					{
+						Name = "Pound Sterling",
+						Value = $"£{oldPriceInfo.initialPriceGBP / 100f:F2} to £{initialPriceGBP / 100f:F2}"
+					});
+
+					embed.Fields.Add(new EmbedField()
+					{
+						Name = "Canadian Dollar",
+						Value = $"${oldPriceInfo.initialPriceCAD / 100f:F2} to ${initialPriceCAD / 100f:F2}"
+					});
+
 					message.Embeds.Add(embed);
 				}
 				else
 				{
-					if (oldPrice.discountPercent == 0)
+					if (oldPriceInfo.discountPercent == 0)
 					{
 						var embed = new DiscordEmbed()
 						{
 							Title = "Sale Started!",
 							Color = new DiscordColor(Color.LightBlue),
-							Description = $"A sale has started! From ${initialPrice / 100f:F2} to ${currentPrice / 100f:F2} ({discountPercent}% off).",
+							Description = "A sale has started!",
 							Footer = new EmbedFooter() { Text = appName }
 						};
+
+						embed.Fields.Add(new EmbedField()
+						{
+							Name = "US Dollar",
+							Value = $"${initialPrice / 100f:F2} to ${currentPrice / 100f:F2} ({discountPercent}% off)."
+						});
+
+						embed.Fields.Add(new EmbedField()
+						{
+							Name = "Euro",
+							Value = $"€{initialPriceEURO / 100f:F2} to €{currentPriceEURO / 100f:F2} ({discountPercentEURO}% off)."
+						});
+
+						embed.Fields.Add(new EmbedField()
+						{
+							Name = "Pound Sterling",
+							Value = $"£{initialPriceGBP / 100f:F2} to £{currentPriceGBP / 100f:F2} ({discountPercentGBP}% off)."
+						});
+
+						embed.Fields.Add(new EmbedField()
+						{
+							Name = "Canadian Dollar",
+							Value = $"${initialPriceCAD / 100f:F2} to ${currentPriceCAD / 100f:F2} ({discountPercentCAD}% off)."
+						});
+
 						message.Embeds.Add(embed);
 					}
-					else if (currentPrice < oldPrice.currentPrice)
+					else if (currentPrice < oldPriceInfo.currentPrice)
 					{
 						var embed = new DiscordEmbed()
 						{
 							Title = "Sale Update",
 							Color = new DiscordColor(Color.LightBlue),
-							Description = $"The sale has increased! From ${oldPrice.currentPrice / 100f:F2} ({oldPrice.discountPercent}% off) to ${currentPrice / 100f:F2} ({discountPercent}% off).",
+							Description = $"The sale has increased!",
 							Footer = new EmbedFooter() { Text = appName }
 						};
+
+						embed.Fields.Add(new EmbedField()
+						{
+							Name = "US Dollar",
+							Value = $"${oldPriceInfo.currentPrice / 100f:F2} ({oldPriceInfo.discountPercent}% off) to ${currentPrice / 100f:F2} ({discountPercent}% off)."
+						});
+
+						embed.Fields.Add(new EmbedField()
+						{
+							Name = "Euro",
+							Value = $"€{oldPriceInfo.currentPriceEURO / 100f:F2} ({oldPriceInfo.discountPercentEURO}% off) to €{currentPriceEURO / 100f:F2} ({discountPercentEURO}% off)."
+						});
+
+						embed.Fields.Add(new EmbedField()
+						{
+							Name = "Pound Sterling",
+							Value = $"£{oldPriceInfo.currentPriceGBP / 100f:F2} ({oldPriceInfo.discountPercentGBP}% off) to £{currentPriceGBP / 100f:F2} ({discountPercentGBP}% off)."
+						});
+
+						embed.Fields.Add(new EmbedField()
+						{
+							Name = "Canadian Dollar",
+							Value = $"${oldPriceInfo.currentPriceCAD / 100f:F2} ({oldPriceInfo.discountPercentCAD}% off) to ${currentPriceCAD / 100f:F2} ({discountPercentCAD}% off)."
+						});
+
 						message.Embeds.Add(embed);
 					}
-					else if (currentPrice == oldPrice.initialPrice)
+					else if (currentPrice == oldPriceInfo.initialPrice)
 					{
 						var embed = new DiscordEmbed()
 						{
 							Title = "Sale Ended",
 							Color = new DiscordColor(Color.LightBlue),
-							Description = $"The sale has ended. Back to ${initialPrice / 100f:F2}.",
+							Description = $"The sale has ended.",
 							Footer = new EmbedFooter() { Text = appName }
 						};
+
+						embed.Fields.Add(new EmbedField()
+						{
+							Name = "US Dollar",
+							Value = $"${initialPrice / 100f:F2}"
+						});
+
+						embed.Fields.Add(new EmbedField()
+						{
+							Name = "Euro",
+							Value = $"€{initialPriceEURO / 100f:F2}"
+						});
+
+						embed.Fields.Add(new EmbedField()
+						{
+							Name = "Pound Sterling",
+							Value = $"£{initialPriceGBP / 100f:F2}"
+						});
+
+						embed.Fields.Add(new EmbedField()
+						{
+							Name = "Canadian Dollar",
+							Value = $"${initialPriceCAD / 100f:F2}"
+						});
+
 						message.Embeds.Add(embed);
 					}
-					else if (currentPrice > oldPrice.currentPrice)
+					else if (currentPrice > oldPriceInfo.currentPrice)
 					{
 						var embed = new DiscordEmbed()
 						{
 							Title = "Sale Update",
 							Color = new DiscordColor(Color.LightBlue),
-							Description = $"The sale has decreased. From ${oldPrice.currentPrice / 100f:F2} ({oldPrice.discountPercent}% off) to ${currentPrice / 100f:F2} ({discountPercent}% off).",
+							Description = "The scale has decreased.",
 							Footer = new EmbedFooter() { Text = appName }
 						};
+
+						embed.Fields.Add(new EmbedField()
+						{
+							Name = "US Dollar",
+							Value = $"${oldPriceInfo.currentPrice / 100f:F2} ({oldPriceInfo.discountPercent}% off) to ${currentPrice / 100f:F2} ({discountPercent}% off)."
+						});
+
+						embed.Fields.Add(new EmbedField()
+						{
+							Name = "Euro",
+							Value = $"€{oldPriceInfo.currentPriceEURO / 100f:F2} ({oldPriceInfo.discountPercentEURO}% off) to €{currentPriceEURO / 100f:F2} ({discountPercentEURO}% off)."
+						});
+
+						embed.Fields.Add(new EmbedField()
+						{
+							Name = "Pound Sterling",
+							Value = $"£{oldPriceInfo.currentPriceGBP / 100f:F2} ({oldPriceInfo.discountPercentGBP}% off) to £{currentPriceGBP / 100f:F2} ({discountPercentGBP}% off)."
+						});
+
+						embed.Fields.Add(new EmbedField()
+						{
+							Name = "Canadian Dollar",
+							Value = $"${oldPriceInfo.currentPriceCAD / 100f:F2} ({oldPriceInfo.discountPercentCAD}% off) to ${currentPriceCAD / 100f:F2} ({discountPercentCAD}% off)."
+						});
+
 						message.Embeds.Add(embed);
 					}
 				}
