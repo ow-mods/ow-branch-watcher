@@ -39,6 +39,9 @@ public class PriceInfo
 
 	public int initialPriceCAD = 0;
 	public int currentPriceCAD = 0;
+
+	public int initialPriceAUD = 0;
+	public int currentPriceAUD = 0;
 }
 
 public class Program
@@ -209,6 +212,13 @@ public class Program
 			var initialPriceCAD = (int)priceOverview["initial"];
 			var currentPriceCAD = (int)priceOverview["final"];
 
+			// aud
+			json = new WebClient().DownloadString($"https://store.steampowered.com/api/appdetails?appids={appid}&cc=au&filters=price_overview");
+			jObject = JObject.Parse(json);
+			priceOverview = jObject[$"{appid}"]["data"]["price_overview"];
+			var initialPriceAUD = (int)priceOverview["initial"];
+			var currentPriceAUD = (int)priceOverview["final"];
+
 			Console.WriteLine(Path.GetFullPath("price.json"));
 
 			if (!File.Exists("price.json"))
@@ -221,12 +231,14 @@ public class Program
 			var actualPriceHasChanged = initialPrice != oldPriceInfo.initialPrice
 			                            && initialPriceGBP != oldPriceInfo.initialPriceGBP
 			                            && initialPriceEURO != oldPriceInfo.initialPriceEURO
-			                            && initialPriceCAD != oldPriceInfo.initialPriceCAD;
+			                            && initialPriceCAD != oldPriceInfo.initialPriceCAD
+			                            && initialPriceAUD != oldPriceInfo.initialPriceAUD;
 
 			var isOnSale = currentPrice != oldPriceInfo.currentPrice
 			               && currentPriceGBP != oldPriceInfo.currentPriceGBP
 			               && currentPriceEURO != oldPriceInfo.currentPriceEURO
-			               && currentPriceCAD != oldPriceInfo.currentPriceCAD;
+			               && currentPriceCAD != oldPriceInfo.currentPriceCAD
+			               && currentPriceAUD != oldPriceInfo.currentPriceAUD;
 
 			File.WriteAllText("price.json", JsonConvert.SerializeObject(new PriceInfo()
 			{
@@ -238,7 +250,9 @@ public class Program
 				currentPriceEURO = currentPriceEURO,
 				initialPriceEURO = initialPriceEURO,
 				currentPriceCAD = currentPriceCAD,
-				initialPriceCAD = initialPriceCAD
+				initialPriceCAD = initialPriceCAD,
+				currentPriceAUD = currentPriceAUD,
+				initialPriceAUD = initialPriceAUD
 			}));
 
 			if (newBranches.Count > 0 || updatedBranches.Count > 0)
@@ -427,6 +441,12 @@ public class Program
 						Value = $"${oldPriceInfo.initialPriceCAD / 100f:F2} to ${initialPriceCAD / 100f:F2}"
 					});
 
+					embed.Fields.Add(new EmbedField()
+					{
+						Name = "Australian Dollar",
+						Value = $"${oldPriceInfo.initialPriceAUD / 100f:F2} to ${initialPriceAUD / 100f:F2}"
+					});
+
 					message.Embeds.Add(embed);
 				}
 				else
@@ -465,6 +485,12 @@ public class Program
 							Value = $"${initialPriceCAD / 100f:F2} to ${currentPriceCAD / 100f:F2}"
 						});
 
+						embed.Fields.Add(new EmbedField()
+						{
+							Name = "Australian Dollar",
+							Value = $"${initialPriceAUD / 100f:F2} to ${currentPriceAUD / 100f:F2}"
+						});
+
 						message.Embeds.Add(embed);
 					}
 					else if (currentPrice == oldPriceInfo.initialPrice)
@@ -499,6 +525,12 @@ public class Program
 						{
 							Name = "Canadian Dollar",
 							Value = $"${initialPriceCAD / 100f:F2}"
+						});
+
+						embed.Fields.Add(new EmbedField()
+						{
+							Name = "Australian Dollar",
+							Value = $"${initialPriceAUD / 100f:F2}"
 						});
 
 						message.Embeds.Add(embed);
