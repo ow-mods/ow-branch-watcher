@@ -234,11 +234,23 @@ public class Program
 			                            && initialPriceCAD != oldPriceInfo.initialPriceCAD
 			                            && initialPriceAUD != oldPriceInfo.initialPriceAUD;
 
-			var isOnSale = currentPrice != oldPriceInfo.currentPrice
-			               && currentPriceGBP != oldPriceInfo.currentPriceGBP
-			               && currentPriceEURO != oldPriceInfo.currentPriceEURO
-			               && currentPriceCAD != oldPriceInfo.currentPriceCAD
-			               && currentPriceAUD != oldPriceInfo.currentPriceAUD;
+			var currentPriceHasChanged = currentPrice != oldPriceInfo.currentPrice
+			                             || currentPriceGBP != oldPriceInfo.currentPriceGBP
+			                             || currentPriceEURO != oldPriceInfo.currentPriceEURO
+			                             || currentPriceCAD != oldPriceInfo.currentPriceCAD
+			                             || currentPriceAUD != oldPriceInfo.currentPriceAUD;
+
+			var currentDifferentFromInitial = initialPrice != currentPrice
+			                                  && initialPriceGBP != currentPriceGBP
+			                                  && initialPriceEURO != currentPriceEURO
+			                                  && initialPriceCAD != currentPriceCAD
+			                                  && initialPriceAUD != currentPriceAUD;
+
+			var currentSameAsInitial = initialPrice == currentPrice
+			                           && initialPriceGBP == currentPriceGBP
+			                           && initialPriceEURO == currentPriceEURO
+			                           && initialPriceCAD == currentPriceCAD
+			                           && initialPriceAUD == currentPriceAUD;
 
 			File.WriteAllText("price.json", JsonConvert.SerializeObject(new PriceInfo()
 			{
@@ -398,7 +410,7 @@ public class Program
 				}
 			}
 
-			if (actualPriceHasChanged || isOnSale)
+			if (actualPriceHasChanged || currentPriceHasChanged)
 			{
 				var hook = new DiscordWebhook
 				{
@@ -451,7 +463,7 @@ public class Program
 				}
 				else
 				{
-					if (oldPriceInfo.discountPercent == 0)
+					if (currentDifferentFromInitial)
 					{
 						var embed = new DiscordEmbed()
 						{
@@ -493,7 +505,7 @@ public class Program
 
 						message.Embeds.Add(embed);
 					}
-					else if (currentPrice == oldPriceInfo.initialPrice)
+					else if (currentSameAsInitial)
 					{
 						var embed = new DiscordEmbed()
 						{
