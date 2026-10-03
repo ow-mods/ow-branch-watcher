@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SteamKit2;
+using SteamKit2.Authentication;
 using System.Drawing;
 using System.Net;
 
@@ -82,13 +83,24 @@ public class Program
 			manager.RunWaitCallbacks(TimeSpan.FromSeconds(1));
 		}
 
-		void OnConnected(SteamClient.ConnectedCallback callback)
+		async void OnConnected(SteamClient.ConnectedCallback callback)
 		{
 			Console.WriteLine($"Connected to Steam. Logging on...");
+
+			var authSession = await steamClient.Authentication.BeginAuthSessionViaCredentialsAsync(
+				new AuthSessionDetails
+				{
+					Username = user,
+					Password = pass,
+					Authenticator = new UserConsoleAuthenticator()
+				});
+
+			var pollResponse = await authSession.PollingWaitForResultAsync();
+
 			steamUser.LogOn(new SteamUser.LogOnDetails
 			{
-				Username = user,
-				Password = pass,
+				Username = pollResponse.AccountName,
+				AccessToken = pollResponse.RefreshToken,
 			});
 		}
 
