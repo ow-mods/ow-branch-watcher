@@ -104,6 +104,7 @@ public class Program
 			{
 				Console.WriteLine($"Failed to log into Steam. Result:{callback.Result} ExtendedResult:{callback.Result}");
 				isRunning = false;
+				Environment.Exit(1);
 				return;
 			}
 
